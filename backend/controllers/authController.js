@@ -1,6 +1,8 @@
 const SendmailTransport = require("nodemailer/lib/sendmail-transport");
 const User=require("../model/User");
-const 
+const jwt=require("jsonwebtoken") ;
+const bcrypt = require("bcryptjs");
+const sendEmail = require("../utils/sendEmail");
 
 
 const generateToken=(id)=>{
@@ -13,7 +15,7 @@ const generateToken=(id)=>{
 const registerUser=async (req,res) => {
     const {name,email,password}=req.body;
     try {
-        const existingUser=User.findOne({email});
+        const existingUser=await User.findOne({email});
         if(existingUser)
         {
             return res.status(400).json({message:'User already exist'});
@@ -29,7 +31,7 @@ const registerUser=async (req,res) => {
 
 
 
-        const user=User.create({name,emai,password:hashedPassword});
+        const user=await User.create({name,email,password:hashedPassword});
         if(user){
             const otp=Math.floor(100000 + Math.random() * 900000).toString();
             const message=`Welcome to Shopnest,${name},your otp is:${otp}`;
@@ -41,7 +43,7 @@ const registerUser=async (req,res) => {
             {
                 _id:user._id,
                 name:user.name,
-                email:user.role,
+                email:user.email,
                 token:generateToken(user._id)
             }
         );
@@ -55,8 +57,8 @@ const registerUser=async (req,res) => {
 const loginUser=async (req,res) => {
     const {email,password}=req.body;
     try{
-        const user=await User.find({email});
-        if(user&&(await bycrypt.compare(password,user.password))){
+        const user=await User.findOne({email});
+        if(user&&(await bcrypt.compare(password,user.password))){
             res.json({
                 _id:user._id,
                 name:user.name,
@@ -78,7 +80,7 @@ const loginUser=async (req,res) => {
 
 const getUsers=async (req,res) => {
     try{
-        const users=User.find({}).select('-password')
+        const users=await User.find({}).select('-password')
         res.json(users);
     }catch(error){
         res.status(500).json({message:'Server error'});
