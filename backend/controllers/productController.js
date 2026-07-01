@@ -1,5 +1,6 @@
-const Product=require('./model/Product');
-const cloudinary=require('../config/cloudinary')
+const Product=require('../model/Product');
+const cloudinary=require('../config/cloudinary');
+const { rawListeners } = require('../model/User');
 
 const getProducts=async (req,res)=>{
     try{
@@ -44,8 +45,10 @@ const createProduct=async(req,res)=>{
     const savedProduct=await product.save();
     res.status(201).json(savedProduct);
     }catch(error){
+        console.log(error);
         res.status(500).json({message:'Server error'});
     }
+}
 
     const updateProduct=async (req,res) => {
         try{
@@ -58,7 +61,7 @@ const createProduct=async(req,res)=>{
                 product.category=category||product.category;
                 product.stock=stock||product.stock;
                 if(req.file){
-                    const result=await cloudinary.uplaod(req.file.path);
+                    const result=await cloudinary.uploader.upload(req.file.path);
                     console.log(result);
                     product.imageUrl=result.secure_url;
                 }
@@ -74,4 +77,26 @@ const createProduct=async(req,res)=>{
         }
     }
 
-}
+    const deleteProduct=async(req,res)=>{
+        try{
+            const product=await Product.findById(req.params.id);
+            if(product){
+                await product.deleteOne();
+                res.json({message:'Product not found'});
+            }
+            else{
+                res.status(404).json({message:'Product deleted successfully'});
+            }
+        }catch(error){
+            res.status(500).json({message:'Server error'});
+        }
+    };
+
+
+    module.exports={
+        getProducts,
+        getProductById,
+        createProduct,
+        deleteProduct,
+        updateProduct
+    }
